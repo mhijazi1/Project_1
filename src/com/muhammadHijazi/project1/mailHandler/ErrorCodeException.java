@@ -1,5 +1,8 @@
 package com.muhammadHijazi.project1.mailHandler;
 
+/*
+ * Simple exception for dealing with error codes
+ */
 public class ErrorCodeException extends Exception {
 	String eCode;
 

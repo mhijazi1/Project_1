@@ -53,17 +53,27 @@ public class SMTPHandler {
 	//method used to write to server
 	public void writeToServer(String write) throws IOException {
 		String out = write;
+		//check to see if what we wants to write ends with a
+		//new line character
 		if (out.endsWith("\n")) {
+			//if it does, send it
 			serverWrite.writeBytes(out);
 		} else {
+			//if it doesnt, add one and send it
 			serverWrite.writeBytes(out + "\n");
 		}
+		//flush our writer just in case
 		serverWrite.flush();
 	}
-
+	
+	//Method for reading from server
 	public String readFromServer() {
+		//get the next token (which should be our code) from the server
 		code = serverRead.next();
+		//get the next line, this isn't saved and is simply read so that we can
+		//bet the next code on the next read
 		serverRead.nextLine();
+		//return the code
 		return code;
 	}
 
