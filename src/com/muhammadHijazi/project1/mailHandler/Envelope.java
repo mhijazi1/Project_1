@@ -5,7 +5,8 @@ import java.io.IOException;
 import com.muhammadHijazi.project1.UI.EMessage;
 
 /*
- * acts as a relay between the GUI and the SMTP socket. Handles sending order, sending state.
+ * Acts as a relay between the GUI and the SMTP socket. Handles sending order, sending state.
+ * Also handles the message itself, and not just the message details
  * States are as follows
  * 0: no connection
  * 1: connected to server
@@ -56,44 +57,72 @@ public class Envelope {
 	}
 
 	public void sendMessage() throws Exception {
+		// Initialize connection to mail server
 		server = new SMTPHandler(localMailServ);
+		// test to make sure the socket has connected correctly, and that the
+		// appropriate
+		// code was received
 		if (server.isConnected() && server.readFromServer().equals("220")) {
+			// We are connected, set state to 1
 			state = 1;
 
 			try {
+				// Hand shake
 				server.writeToServer("HELO mail");
+				// check server output
 				errorCheck(server.readFromServer());
+				// Identify the sender
 				server.writeToServer("MAIL FROM: <" + messageSender + ">");
 				errorCheck(server.readFromServer());
+				// specify the recipient
 				server.writeToServer("RCPT TO: <" + messageRec + ">");
 				errorCheck(server.readFromServer());
+				// Start passing the message
 				server.writeToServer("DATA");
 				errorCheck(server.readFromServer());
+				// If a Subject was specified, add it into the data field
 				if (!messageSubject.isEmpty()) {
 					server.writeToServer("Subject: " + messageSubject);
 				}
+				// Add the message text
 				server.writeToServer(messageText);
+				// End the DATA field
 				server.writeToServer(".");
 				errorCheck(server.readFromServer());
+				// Exit
 				server.writeToServer("QUIT");
 				errorCheck(server.readFromServer());
+				// Let the user know that the message has been sent, and close
+				// the program after they have hit OK.
 				new EMessage("Message Sent!", true).setVisible(true);
 				return;
 			} catch (ErrorCodeException ec) {
+				// Let the user know an error has occured
+				new EMessage(
+						"An Error has occured, please check your inputs and try again",
+						false);
+				// this is for my own sake mostly, will remove later
+				// TODO: get rid of this when you are done
 				System.out.println("Error code: " + ec.getECode());
+				// Halt the connection with the server
 				server.writeToServer("QUIT");
+				// Return to the GUI
 				return;
 			} catch (Exception e) {
+				// Shit Happens
 				System.out.println("I don't even know");
 			}
 		}
 	}
 
 	public void errorCheck(String code) throws Exception {
-		if (!(code.startsWith("2") || code.startsWith("3"))) {
-			throw new ErrorCodeException(code);
-		} else {
+		//if the code starts with a 2 or a 3, then our last input was accepted and we can move on
+		if (code.startsWith("2") || code.startsWith("3")) {
+			//we incriment the state as the program progresses from here
 			state++;
+		} else {
+			// if not we let the user know something is wrong
+			throw new ErrorCodeException(code);
 		}
 	}
 
