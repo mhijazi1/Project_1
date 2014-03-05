@@ -139,11 +139,13 @@ public class Envelope {
 			throw new ErrorCodeException(code);
 		}
 	}
-
+	
+	//add "From:" header
 	private void addMessageSender(String sender) {
 		message = "From: " + sender + "\n";
 	}
-
+	
+	//add "To:" Header
 	private void addMessageRecipents(String[] rcp) {
 		message = message + "To: " + rcp[0];
 		for (int i = 1; i < rcp.length; i++) {
@@ -152,7 +154,8 @@ public class Envelope {
 		message = message + "\n";
 
 	}
-
+	
+	//add "CC:" Header
 	private void addMessageCc(String[] messageCc2) {
 		if (messageCc.length > 0) {
 			message = message + "Cc: " + messageCc[0];
@@ -162,7 +165,8 @@ public class Envelope {
 			message = message + "\n";
 		}
 	}
-
+	
+	//add Date Header
 	private void addMessageDate() {
 		DateFormat dateFormat = DateFormat.getDateTimeInstance();
 		Calendar date = Calendar.getInstance();
