@@ -16,8 +16,6 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 
 import com.muhammadHijazi.project1.mailHandler.Envelope;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 
 public class NewMessage extends JFrame {
 	private JTextField txtTo;
