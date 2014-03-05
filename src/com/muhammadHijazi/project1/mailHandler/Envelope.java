@@ -1,6 +1,7 @@
 package com.muhammadHijazi.project1.mailHandler;
 
 import java.io.IOException;
+import java.lang.Object;
 
 import com.muhammadHijazi.project1.UI.EMessage;
 
@@ -19,8 +20,9 @@ import com.muhammadHijazi.project1.UI.EMessage;
 public class Envelope {
 	SMTPHandler server;
 	// strings passed from GUI
-	private String messageRec, messageSender, localMailServ, messageSubject,
-			messageText;
+	private String messageSender, localMailServ, messageSubject, messageText;
+	// all our recipients will be placed in this array
+	private String[] messageRec;
 	/*
 	 * The current state, this will be passed to a diffrent GUI later to
 	 * represent the state on a progress bar.
@@ -36,7 +38,11 @@ public class Envelope {
 			String message, String subject) {
 		// Initialize all variables
 		localMailServ = mailServer;
-		messageRec = receiver;
+
+		// creates an array of recepents, splitting whenever a ; character
+		// appears
+		messageRec = receiver.split(";");
+
 		messageSender = sender;
 		messageText = message;
 		messageSubject = subject;
@@ -49,9 +55,14 @@ public class Envelope {
 			String message) {
 		// Initialize all variables
 		localMailServ = mailServer;
-		messageRec = receiver;
+
+		// creates an array of recepents, splitting whenever a ; character
+		// appears
+		messageRec = receiver.split(";");
+
 		messageSender = sender;
 		messageText = message;
+
 		state = 0; // state 0, variables initialized, no connection
 		hasSubject = false; // no subject, so we set this to false
 	}
@@ -75,8 +86,10 @@ public class Envelope {
 				server.writeToServer("MAIL FROM: <" + messageSender + ">");
 				errorCheck(server.readFromServer());
 				// specify the recipient
-				server.writeToServer("RCPT TO: <" + messageRec + ">");
-				errorCheck(server.readFromServer());
+				for (int i = 0; i < messageRec.length; i++) {
+					server.writeToServer("RCPT TO: <" + messageRec[i].trim() + ">");
+					errorCheck(server.readFromServer());
+				}
 				// Start passing the message
 				server.writeToServer("DATA");
 				errorCheck(server.readFromServer());
@@ -116,10 +129,11 @@ public class Envelope {
 	}
 
 	public void errorCheck(String code) throws Exception {
-		//if the code starts with a 2 or a 3, then our last input was accepted and we can move on
+		// if the code starts with a 2 or a 3, then our last input was accepted
+		// and we can move on
 		if (code.startsWith("2") || code.startsWith("3")) {
-			//we incriment the state as the program progresses from here
-			state++;
+			// we incriment the state as the program progresses from here
+			// state++;
 		} else {
 			// if not we let the user know something is wrong
 			throw new ErrorCodeException(code);
@@ -134,11 +148,11 @@ public class Envelope {
 		return state;
 	}
 
-	public String getMessageRec() {
+	public String[] getMessageRec() {
 		return messageRec;
 	}
 
-	public void setMessageRec(String messageRec) {
+	public void setMessageRec(String messageRec[]) {
 		this.messageRec = messageRec;
 	}
 
