@@ -16,6 +16,8 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 
 import com.muhammadHijazi.project1.mailHandler.Envelope;
+import java.awt.event.KeyEvent;
+import javax.swing.LayoutStyle.ComponentPlacement;
 
 public class NewMessage extends JFrame {
 	private JTextField txtTo;
@@ -23,6 +25,7 @@ public class NewMessage extends JFrame {
 	private JTextField txtLocalMailserver;
 	private JTextField txtSubject;
 	private JTextArea txtrMessage;
+	private JTextField txtCc;
 
 	public NewMessage() {
 
@@ -50,6 +53,13 @@ public class NewMessage extends JFrame {
 		this.txtTo.setColumns(10);
 
 		textHide(txtTo, "To");
+
+		txtCc = new JTextField();
+		txtCc.setToolTipText("Cc");
+		txtCc.setText("Cc");
+		txtCc.setColumns(10);
+
+		textHide(txtCc, "Cc");
 
 		txtSubject = new JTextField();
 		txtSubject.setToolTipText("Subject");
@@ -93,14 +103,22 @@ public class NewMessage extends JFrame {
 						break;
 					}
 				}
-				if (txtLocalMailserver.getText().equals(
-						txtLocalMailserver.getToolTipText())
-						|| txtLocalMailserver.getText().isEmpty()) {
+				// Checks to see if a subject was given, and if not sets the
+				// subject to blank
+				if (txtSubject.getText().equals(txtSubject.getToolTipText())
+						|| txtSubject.getText().isEmpty()) {
 					txtSubject.setText("");
 				}
-				Envelope en = new Envelope(txtLocalMailserver.getText(), txtTo
-						.getText(), txtFrom.getText(), txtrMessage.getText(),
-						txtSubject.getText());
+				if (txtCc.getText().equals(txtCc.getToolTipText())
+						|| txtCc.getText().isEmpty()) {
+					txtCc.setText("");
+				}
+				// Adds subject header to Message
+				String message = "Subject: " + txtSubject.getText() + "\n"
+						+ txtrMessage.getText();
+				Envelope en = new Envelope(txtLocalMailserver.getText(),
+						txtFrom.getText(), txtTo.getText(), txtCc.getText(),
+						message);
 
 				try {
 					// new SMTPProgress(
@@ -136,12 +154,29 @@ public class NewMessage extends JFrame {
 																				Short.MAX_VALUE)
 																		.addContainerGap())
 														.addGroup(
+																Alignment.TRAILING,
+																groupLayout
+																		.createSequentialGroup()
+																		.addComponent(
+																				txtSubject,
+																				GroupLayout.DEFAULT_SIZE,
+																				699,
+																				Short.MAX_VALUE)
+																		.addGap(25))
+														.addGroup(
+																Alignment.TRAILING,
 																groupLayout
 																		.createSequentialGroup()
 																		.addGroup(
 																				groupLayout
 																						.createParallelGroup(
 																								Alignment.TRAILING)
+																						.addComponent(
+																								txtCc,
+																								Alignment.LEADING,
+																								GroupLayout.DEFAULT_SIZE,
+																								699,
+																								Short.MAX_VALUE)
 																						.addComponent(
 																								btnSend,
 																								Alignment.LEADING,
@@ -162,12 +197,6 @@ public class NewMessage extends JFrame {
 																								Short.MAX_VALUE)
 																						.addComponent(
 																								txtTo,
-																								Alignment.LEADING,
-																								GroupLayout.DEFAULT_SIZE,
-																								711,
-																								Short.MAX_VALUE)
-																						.addComponent(
-																								txtSubject,
 																								Alignment.LEADING,
 																								GroupLayout.DEFAULT_SIZE,
 																								711,
@@ -193,13 +222,15 @@ public class NewMessage extends JFrame {
 						.addComponent(txtTo, GroupLayout.PREFERRED_SIZE,
 								GroupLayout.DEFAULT_SIZE,
 								GroupLayout.PREFERRED_SIZE)
-						.addGap(13)
-						.addComponent(txtSubject, GroupLayout.PREFERRED_SIZE,
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addComponent(txtCc, GroupLayout.PREFERRED_SIZE,
 								GroupLayout.DEFAULT_SIZE,
 								GroupLayout.PREFERRED_SIZE)
-						.addGap(24)
-						.addComponent(scroll, GroupLayout.DEFAULT_SIZE, 511,
-								Short.MAX_VALUE).addGap(37)));
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addComponent(txtSubject)
+						.addGap(18)
+						.addComponent(scroll, GroupLayout.PREFERRED_SIZE, 487,
+								GroupLayout.PREFERRED_SIZE).addGap(37)));
 		groupLayout.setAutoCreateGaps(true);
 		groupLayout.setAutoCreateContainerGaps(true);
 		getContentPane().setLayout(groupLayout);

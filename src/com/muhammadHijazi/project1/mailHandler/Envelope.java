@@ -1,7 +1,10 @@
 package com.muhammadHijazi.project1.mailHandler;
 
 import java.io.IOException;
-import java.lang.Object;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 import com.muhammadHijazi.project1.UI.EMessage;
 
@@ -20,51 +23,29 @@ import com.muhammadHijazi.project1.UI.EMessage;
 public class Envelope {
 	SMTPHandler server;
 	// strings passed from GUI
-	private String messageSender, localMailServ, messageSubject, messageText;
+	private String messageSender, localMailServ, messageText, message;
 	// all our recipients will be placed in this array
-	private String[] messageRec;
+	private String[] messageRec, messageCc;
 	/*
 	 * The current state, this will be passed to a diffrent GUI later to
 	 * represent the state on a progress bar.
 	 */
 	private int state;
-	// used later to check and see if the message has a subject
-	private boolean hasSubject;
 
-	// two possible constructors
-
-	// constructor 1: w/ subject
-	public Envelope(String mailServer, String receiver, String sender,
-			String message, String subject) {
+	public Envelope(String mailServer, String sender, String receiver,
+			String Cc, String message) {
 		// Initialize all variables
 		localMailServ = mailServer;
 
-		// creates an array of recepents, splitting whenever a ; character
+		// creates an array of recipients, splitting whenever a ; character
 		// appears
 		messageRec = receiver.split(";");
-
-		messageSender = sender;
-		messageText = message;
-		messageSubject = subject;
-		state = 0; // state 0, variables initialized, no connection
-		hasSubject = true; // a subject is given, so we set this to true
-	}
-
-	// constructor 2: w/o subject
-	public Envelope(String mailServer, String receiver, String sender,
-			String message) {
-		// Initialize all variables
-		localMailServ = mailServer;
-
-		// creates an array of recepents, splitting whenever a ; character
-		// appears
-		messageRec = receiver.split(";");
+		messageCc = Cc.split(";");
 
 		messageSender = sender;
 		messageText = message;
 
 		state = 0; // state 0, variables initialized, no connection
-		hasSubject = false; // no subject, so we set this to false
 	}
 
 	public void sendMessage() throws Exception {
@@ -87,18 +68,44 @@ public class Envelope {
 				errorCheck(server.readFromServer());
 				// specify the recipient
 				for (int i = 0; i < messageRec.length; i++) {
-					server.writeToServer("RCPT TO: <" + messageRec[i].trim() + ">");
+					server.writeToServer("RCPT TO: <" + messageRec[i].trim()
+							+ ">");
 					errorCheck(server.readFromServer());
+				}
+				if (!messageCc[0].equals("")) {
+					for (int i = 0; i < messageCc.length; i++) {
+						System.out.println(messageCc[i]);
+						server.writeToServer("RCPT TO: <" + messageCc[i].trim()
+								+ ">");
+						errorCheck(server.readFromServer());
+					}
 				}
 				// Start passing the message
 				server.writeToServer("DATA");
 				errorCheck(server.readFromServer());
-				// If a Subject was specified, add it into the data field
-				if (!messageSubject.isEmpty()) {
-					server.writeToServer("Subject: " + messageSubject);
+				message = "From: " + messageSender + "\n";
+
+				message = message + "To: " + messageRec[0];
+				for (int i = 1; i < messageRec.length; i++) {
+					message = message + ", " + messageRec[i];
 				}
+				message = message + "\n";
+				if (messageCc.length > 0) {
+					message = message + "Cc: " + messageCc[0];
+					for (int i = 1; i < messageCc.length; i++) {
+						message = message + ", " + messageCc[i];
+					}
+					message = message + "\n";
+				}
+				DateFormat dateFormat = DateFormat.getDateTimeInstance();
+				Calendar date = Calendar.getInstance();
+
+				message = message + "Date: "
+						+ dateFormat.format(date.getTime()) + "\n";
+
 				// Add the message text
-				server.writeToServer(messageText);
+				message = message + messageText;
+				server.writeToServer(message);
 				// End the DATA field
 				server.writeToServer(".");
 				errorCheck(server.readFromServer());
@@ -110,7 +117,7 @@ public class Envelope {
 				new EMessage("Message Sent!", true).setVisible(true);
 				return;
 			} catch (ErrorCodeException ec) {
-				// Let the user know an error has occured
+				// Let the user know an error has occurred
 				new EMessage(
 						"An Error has occured, please check your inputs and try again",
 						false);
@@ -170,18 +177,6 @@ public class Envelope {
 
 	public void setLocalMailServ(String localMailServ) {
 		this.localMailServ = localMailServ;
-	}
-
-	public String getMessageSubject() {
-		if (hasSubject)
-			return messageSubject;
-		else
-			return "";
-	}
-
-	public void setMessageSubject(String messageSubject) {
-		this.messageSubject = messageSubject;
-		hasSubject = true;
 	}
 
 	public String getMessageText() {
