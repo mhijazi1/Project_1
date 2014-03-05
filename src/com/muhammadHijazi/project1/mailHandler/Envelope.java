@@ -61,11 +61,14 @@ public class Envelope {
 			try {
 				// Hand shake
 				server.writeToServer("HELO mail");
+
 				// check server output
 				errorCheck(server.readFromServer());
+
 				// Identify the sender
 				server.writeToServer("MAIL FROM: <" + messageSender + ">");
 				errorCheck(server.readFromServer());
+
 				// specify the recipient
 				for (int i = 0; i < messageRec.length; i++) {
 					server.writeToServer("RCPT TO: <" + messageRec[i].trim()
@@ -83,32 +86,22 @@ public class Envelope {
 				// Start passing the message
 				server.writeToServer("DATA");
 				errorCheck(server.readFromServer());
-				message = "From: " + messageSender + "\n";
 
-				message = message + "To: " + messageRec[0];
-				for (int i = 1; i < messageRec.length; i++) {
-					message = message + ", " + messageRec[i];
-				}
-				message = message + "\n";
-				if (messageCc.length > 0) {
-					message = message + "Cc: " + messageCc[0];
-					for (int i = 1; i < messageCc.length; i++) {
-						message = message + ", " + messageCc[i];
-					}
-					message = message + "\n";
-				}
-				DateFormat dateFormat = DateFormat.getDateTimeInstance();
-				Calendar date = Calendar.getInstance();
+				// Header Generation, each adds a header to
+				// message string
+				addMessageSender(messageSender);
+				addMessageRecipents(messageRec);
+				addMessageCc(messageCc);
+				addMessageDate();
 
-				message = message + "Date: "
-						+ dateFormat.format(date.getTime()) + "\n";
-
-				// Add the message text
+				// Add the message text to message string
 				message = message + messageText;
 				server.writeToServer(message);
+
 				// End the DATA field
 				server.writeToServer(".");
 				errorCheck(server.readFromServer());
+				
 				// Exit
 				server.writeToServer("QUIT");
 				errorCheck(server.readFromServer());
@@ -145,6 +138,37 @@ public class Envelope {
 			// if not we let the user know something is wrong
 			throw new ErrorCodeException(code);
 		}
+	}
+
+	private void addMessageSender(String sender) {
+		message = "From: " + sender + "\n";
+	}
+
+	private void addMessageRecipents(String[] rcp) {
+		message = message + "To: " + rcp[0];
+		for (int i = 1; i < rcp.length; i++) {
+			message = message + ", " + rcp[i];
+		}
+		message = message + "\n";
+
+	}
+
+	private void addMessageCc(String[] messageCc2) {
+		if (messageCc.length > 0) {
+			message = message + "Cc: " + messageCc[0];
+			for (int i = 1; i < messageCc.length; i++) {
+				message = message + ", " + messageCc[i];
+			}
+			message = message + "\n";
+		}
+	}
+
+	private void addMessageDate() {
+		DateFormat dateFormat = DateFormat.getDateTimeInstance();
+		Calendar date = Calendar.getInstance();
+
+		message = message + "Date: " + dateFormat.format(date.getTime()) + "\n";
+
 	}
 
 	public void forceClose() throws IOException {
