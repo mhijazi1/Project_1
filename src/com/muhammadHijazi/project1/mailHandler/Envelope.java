@@ -26,6 +26,9 @@ public class Envelope {
 	private String messageSender, localMailServ, messageText, message;
 	// all our recipients will be placed in this array
 	private String[] messageRec, messageCc;
+
+	private static final int MAX_RETRY = 5;
+	private int retry = 0;
 	/*
 	 * The current state, this will be passed to a diffrent GUI later to
 	 * represent the state on a progress bar.
@@ -57,74 +60,103 @@ public class Envelope {
 		if (server.isConnected() && server.readFromServer().equals("220")) {
 			// We are connected, set state to 1
 			state = 1;
+			// if a non-fatal error occurs, the while loop will try again.
+			while (true) {
+				try {
 
-			try {
-				// Hand shake
-				server.writeToServer("HELO mail");
+					// if this is a retry of a non-fatal error
+					if (retry > 0) {
+						// reset the SMTP connection
+						server.writeToServer("RSET");
+						// Check reply code
+						errorCheck(server.readFromServer());
+						// reset the message
+						message = "";
+					}
 
-				// check server output
-				errorCheck(server.readFromServer());
+					// Hand shake
+					server.writeToServer("HELO mail");
 
-				// Identify the sender
-				server.writeToServer("MAIL FROM: <" + messageSender + ">");
-				errorCheck(server.readFromServer());
-
-				// specify the recipient
-				for (int i = 0; i < messageRec.length; i++) {
-					server.writeToServer("RCPT TO: <" + messageRec[i].trim()
-							+ ">");
+					// check server output
 					errorCheck(server.readFromServer());
-				}
-				if (!messageCc[0].equals("")) {
-					for (int i = 0; i < messageCc.length; i++) {
-						System.out.println(messageCc[i]);
-						server.writeToServer("RCPT TO: <" + messageCc[i].trim()
-								+ ">");
+
+					// Identify the sender
+					server.writeToServer("MAIL FROM: <" + messageSender + ">");
+					errorCheck(server.readFromServer());
+
+					// specify the recipient
+					for (int i = 0; i < messageRec.length; i++) {
+						server.writeToServer("RCPT TO: <"
+								+ messageRec[i].trim() + ">");
 						errorCheck(server.readFromServer());
 					}
+					if (!messageCc[0].equals("")) {
+						for (int i = 0; i < messageCc.length; i++) {
+							System.out.println(messageCc[i]);
+							server.writeToServer("RCPT TO: <"
+									+ messageCc[i].trim() + ">");
+							errorCheck(server.readFromServer());
+						}
+					}
+					// Start passing the message
+					server.writeToServer("DATA");
+					errorCheck(server.readFromServer());
+
+					// Header Generation, each adds a header to
+					// message string
+					addMessageSender(messageSender);
+					addMessageRecipents(messageRec);
+					addMessageCc(messageCc);
+					addMessageDate();
+
+					// Add the message text to message string
+					message = message + messageText;
+					server.writeToServer(message);
+
+					// End the DATA field
+					server.writeToServer(".");
+					errorCheck(server.readFromServer());
+
+					// Exit
+					server.writeToServer("QUIT");
+					errorCheck(server.readFromServer());
+					break;
+				} catch (ErrorCodeException ec) {
+					// check to see if a fatal error has occured
+					if (ec.getECode().startsWith("5")) {
+						// Let the user know a fatal error has occurred
+						new EMessage(
+								"An Error has occured, please check your inputs and try again",
+								false).setVisible(true);
+						// Return to the GUI
+						return;
+					} else if (ec.getECode().startsWith("4")) {
+						// Retry sending if the error is not fatal up to
+						// MAX_RETRY times
+						System.out.println(retry);
+						if (++retry >= MAX_RETRY) {
+							new EMessage(
+									"An unexpected error occured,  please try again",
+									false).setVisible(true);
+							// Return to the GUI
+							return;
+						}
+					}
+					// this is for my own sake mostly, will remove later
+					// TODO: get rid of this when you are done
+					System.out.println("Error code: " + ec.getECode());
+				} catch (Exception e) {
+					// Shit Happens
+					// System.out.println("I don't even know");
+					e.printStackTrace();
+					return;
 				}
-				// Start passing the message
-				server.writeToServer("DATA");
-				errorCheck(server.readFromServer());
-
-				// Header Generation, each adds a header to
-				// message string
-				addMessageSender(messageSender);
-				addMessageRecipents(messageRec);
-				addMessageCc(messageCc);
-				addMessageDate();
-
-				// Add the message text to message string
-				message = message + messageText;
-				server.writeToServer(message);
-
-				// End the DATA field
-				server.writeToServer(".");
-				errorCheck(server.readFromServer());
-				
-				// Exit
-				server.writeToServer("QUIT");
-				errorCheck(server.readFromServer());
-				// Let the user know that the message has been sent, and close
-				// the program after they have hit OK.
-				new EMessage("Message Sent!", true).setVisible(true);
-				return;
-			} catch (ErrorCodeException ec) {
-				// Let the user know an error has occurred
-				new EMessage(
-						"An Error has occured, please check your inputs and try again",
-						false);
-				// this is for my own sake mostly, will remove later
-				// TODO: get rid of this when you are done
-				System.out.println("Error code: " + ec.getECode());
-				// Halt the connection with the server
-				server.writeToServer("QUIT");
-				// Return to the GUI
-				return;
-			} catch (Exception e) {
-				// Shit Happens
-				System.out.println("I don't even know");
 			}
+			// Let the user know that the message has been sent, and close
+			// the program after they have hit OK.
+			new EMessage("Message Sent!", true).setVisible(true);
+			return;
+
 		}
 	}
 
@@ -139,13 +171,13 @@ public class Envelope {
 			throw new ErrorCodeException(code);
 		}
 	}
-	
-	//add "From:" header
+
+	// add "From:" header
 	private void addMessageSender(String sender) {
 		message = "From: " + sender + "\n";
 	}
-	
-	//add "To:" Header
+
+	// add "To:" Header
 	private void addMessageRecipents(String[] rcp) {
 		message = message + "To: " + rcp[0];
 		for (int i = 1; i < rcp.length; i++) {
@@ -154,8 +186,8 @@ public class Envelope {
 		message = message + "\n";
 
 	}
-	
-	//add "CC:" Header
+
+	// add "CC:" Header
 	private void addMessageCc(String[] messageCc2) {
 		if (messageCc.length > 0) {
 			message = message + "Cc: " + messageCc[0];
@@ -165,8 +197,8 @@ public class Envelope {
 			message = message + "\n";
 		}
 	}
-	
-	//add Date Header
+
+	// add Date Header
 	private void addMessageDate() {
 		DateFormat dateFormat = DateFormat.getDateTimeInstance();
 		Calendar date = Calendar.getInstance();
