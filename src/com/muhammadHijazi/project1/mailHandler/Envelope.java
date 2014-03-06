@@ -1,6 +1,7 @@
 package com.muhammadHijazi.project1.mailHandler;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -81,7 +82,18 @@ public class Envelope {
 					errorCheck(server.readFromServer());
 
 					// Identify the sender
-					server.writeToServer("MAIL FROM: <" + messageSender + ">");
+
+					// this way uses the user input
+					// server.writeToServer("MAIL FROM: <" + messageSender +
+					// ">");
+
+					// this is an auto generated sender based on the users
+					// username and mechine name
+					server.writeToServer("MAIL FROM: <"
+							+ System.getProperty("user.name") + "@"
+							+ InetAddress.getLocalHost().getCanonicalHostName()
+							+ ">");
+
 					errorCheck(server.readFromServer());
 
 					// specify the recipient
