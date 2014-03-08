@@ -28,7 +28,9 @@ public class Envelope {
 	// all our recipients will be placed in this array
 	private String[] messageRec, messageCc;
 
+	private static final int NUM_KEY_WORDS = 3;
 	private static final int MAX_RETRY = 5;
+
 	private int retry = 0;
 	/*
 	 * The current state, this will be passed to a diffrent GUI later to
@@ -48,7 +50,6 @@ public class Envelope {
 
 		messageSender = sender;
 		messageText = message;
-
 		state = 0; // state 0, variables initialized, no connection
 	}
 
@@ -71,10 +72,8 @@ public class Envelope {
 						server.writeToServer("RSET");
 						// Check reply code
 						errorCheck(server.readFromServer());
-						// reset the message
-						message = "";
 					}
-
+					message = "";
 					// Hand shake
 					server.writeToServer("HELO mail");
 
@@ -116,10 +115,11 @@ public class Envelope {
 
 					// Header Generation, each adds a header to
 					// message string
-					addMessageSender(messageSender);
-					addMessageRecipents(messageRec);
-					addMessageCc(messageCc);
 					addMessageDate();
+					addMessageKeywords();
+					addMessageCc(messageCc);
+					addMessageRecipents(messageRec);
+					addMessageSender(messageSender);
 
 					// Add the message text to message string
 					message = message + messageText;
@@ -184,9 +184,20 @@ public class Envelope {
 		}
 	}
 
+	private void addMessageKeywords() {
+		String[] keywords = KeywordFinder.find.findKeywords(messageText,
+				NUM_KEY_WORDS);
+
+		message = message + "Keywords: " + keywords[0];
+		for (int i = 1; i < keywords.length; i++) {
+			message = message + "," + keywords[i];
+		}
+		message = message + "\n";
+	}
+
 	// add "From:" header
 	private void addMessageSender(String sender) {
-		message = "From: " + sender + "\n";
+		message = message + "From: " + sender + "\n";
 	}
 
 	// add "To:" Header
@@ -201,7 +212,7 @@ public class Envelope {
 
 	// add "CC:" Header
 	private void addMessageCc(String[] messageCc2) {
-		if (messageCc.length > 0) {
+		if (messageCc.length > 1) {
 			message = message + "Cc: " + messageCc[0];
 			for (int i = 1; i < messageCc.length; i++) {
 				message = message + ", " + messageCc[i];
@@ -216,7 +227,6 @@ public class Envelope {
 		Calendar date = Calendar.getInstance();
 
 		message = message + "Date: " + dateFormat.format(date.getTime()) + "\n";
-
 	}
 
 	public void forceClose() throws IOException {

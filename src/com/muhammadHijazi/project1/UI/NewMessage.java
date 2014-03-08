@@ -115,7 +115,7 @@ public class NewMessage extends JFrame {
 				}
 				// Adds subject header to Message
 				String message = "Subject: " + txtSubject.getText() + "\n"
-						+ txtrMessage.getText();
+						+ "\n" + txtrMessage.getText();
 				Envelope en = new Envelope(txtLocalMailserver.getText(),
 						txtFrom.getText(), txtTo.getText(), txtCc.getText(),
 						message);
