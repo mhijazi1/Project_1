@@ -63,9 +63,14 @@ public class KeywordFinder {
 
 				}
 			}
-			for (int i = 0; i < numOfKeywords; i++) {
-				if (!keyWords.isEmpty())
+			if (!keyWords.isEmpty()) {
+				if (keyWords.size() < numOfKeywords) {
+					numOfKeywords = keyWords.size();
+					found = new String[numOfKeywords];
+				}
+				for (int i = 0; i < numOfKeywords; i++) {
 					found[i] = keyWords.get(i).getWord();
+				}
 			}
 			return found;
 		}
